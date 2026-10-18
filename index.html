@@ -1,0 +1,776 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f1f5fb">
+  <title>READ | 卓球予測トレーニング</title>
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-title" content="READ">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      color-scheme: light;
+      --paper: #f1f5fb;
+      --ink: #15233b;
+      --muted: #6d7a90;
+      --blue: #1f4f9e;
+      --accent: #8fd6ff;
+      --coral: #ef7055;
+      --line: #d4dce9;
+      --white: #fdfeff;
+      font-family: "Noto Sans JP", "Yu Gothic", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      min-width: 0;
+      min-height: 100svh;
+      margin: 0;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image: radial-gradient(#c3cee0 0.65px, transparent 0.65px);
+      background-size: 13px 13px;
+    }
+    button { font: inherit; }
+    .shell { width: min(100% - 36px, 520px); margin: 0 auto; padding: 22px 0 max(28px, env(safe-area-inset-bottom)); }
+    .topbar { display: flex; align-items: center; justify-content: space-between; padding-bottom: 17px; border-bottom: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-mark { display: grid; width: 31px; height: 31px; place-items: center; border-radius: 50%; background: var(--blue); color: var(--accent); font-family: "Barlow Condensed", sans-serif; font-size: 19px; font-weight: 800; }
+    .brand-name { font-family: "Barlow Condensed", sans-serif; font-size: 20px; font-weight: 800; letter-spacing: 0; line-height: 1; }
+    .brand-sub { margin-top: 3px; color: var(--muted); font-size: 9px; font-weight: 700; letter-spacing: .04em; }
+    .session-tag { padding: 7px 10px; border: 1px solid var(--line); border-radius: 3px; color: var(--blue); font-size: 10px; font-weight: 700; }
+    .intro { display: flex; align-items: end; justify-content: space-between; padding: 20px 0 15px; }
+    .eyebrow { margin: 0 0 5px; color: var(--coral); font-size: 10px; font-weight: 800; letter-spacing: .07em; }
+    h1 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: 0; line-height: 1.35; }
+    .round-count { text-align: right; }
+    .round-count strong { display: block; font-family: "Barlow Condensed", sans-serif; font-size: 27px; line-height: .95; }
+    .round-count span { color: var(--muted); font-size: 9px; font-weight: 700; }
+    .hand-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 0 13px; }
+    .hand-label { color: var(--muted); font-size: 11px; font-weight: 700; }
+    .hand-switch { display: grid; min-width: 166px; grid-template-columns: 1fr 1fr; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 3px; background: #e5ebf4; }
+    .hand-option { min-height: 38px; border: 0; border-radius: 2px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+    .hand-option[aria-pressed="true"] { background: var(--blue); color: white; }
+    .hand-option:disabled { cursor: default; opacity: .65; }
+    .level-switch { min-width: 210px; grid-template-columns: repeat(3, 1fr); }
+
+    .court {
+      position: relative;
+      height: clamp(255px, 72vw, 340px);
+      overflow: hidden;
+      isolation: isolate;
+      border-radius: 5px;
+      background: #12294b;
+      box-shadow: 0 8px 22px #1a305417;
+    }
+    .court::before { position: absolute; inset: 0; z-index: -1; background: linear-gradient(155deg, #2c5592 0%, #173461 55%, #10264a 100%); content: ""; }
+    .court-lines { position: absolute; inset: 0; opacity: .22; background: repeating-linear-gradient(0deg, transparent 0 32px, #c6d5ec 33px 34px); }
+    .scene-top { position: absolute; top: 14px; left: 15px; display: flex; align-items: center; gap: 7px; color: #eef4ff; font-family: "Barlow Condensed", sans-serif; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px #8fd6ff88; }
+    .cue-chip { position: absolute; top: 12px; right: 13px; padding: 6px 8px; border: 1px solid #8fd6ff55; border-radius: 2px; color: var(--accent); font-size: 9px; font-weight: 700; }
+    .opponent { position: absolute; top: 33px; left: calc(50% + var(--player-offset, 0%)); width: 160px; height: 175px; transform: translateX(-50%) scaleX(var(--hand-mirror, 1)); transition: left .24s ease; }
+    .head { position: absolute; top: 0; left: 65px; width: 31px; height: 36px; border-radius: 48% 48% 43% 43%; background: #dda987; }
+    .hair { position: absolute; z-index: 1; top: -2px; left: 63px; width: 35px; height: 16px; border-radius: 60% 60% 25% 20%; background: #1d2129; }
+    .neck { position: absolute; top: 30px; left: 75px; width: 13px; height: 16px; background: #ca9677; }
+    .torso { position: absolute; top: 41px; left: 39px; width: 83px; height: 96px; border-radius: 25px 25px 13px 13px; background: #2f6fd0; clip-path: polygon(20% 0, 80% 0, 100% 100%, 0 100%); transform: rotate(0deg); transform-origin: 50% 8%; transition: transform .35s ease; }
+    .shirt-stripe { position: absolute; top: 48px; left: 77px; width: 6px; height: 82px; transform: rotate(1deg); background: var(--coral); opacity: .9; }
+    /* Arm joints are positioned by script each frame so the racket can travel in a straight line. */
+    .swing-arm { position: absolute; z-index: 2; top: 50px; left: 100px; width: 76px; height: 130px; }
+    .swing-arm > * { position: absolute; top: 0; left: 0; background: #dda987; }
+    /* The opponent faces the viewer, so a right-hander's hitting side appears on the left of the screen. */
+    .court { --hand-mirror: -1; }
+    .court[data-handedness="left"] { --hand-mirror: 1; }
+    .court.is-aligning .torso, .court.is-aligning .opponent { transition: none; }
+    .upper-arm { width: 18px; height: 47px; border-radius: 12px; transform-origin: 9px 8px; }
+    .elbow { width: 18px; height: 18px; border-radius: 50%; }
+    .lower-arm { width: 14px; height: 48px; border-radius: 12px; transform-origin: 7px 6px; }
+    .wrist { width: 16px; height: 16px; border-radius: 50%; }
+    .swing-arm > .paddle { width: 33px; height: 42px; border: 4px solid var(--rubber-edge); border-radius: 48% 48% 43% 43%; background: var(--rubber); transform-origin: 50% -18px; }
+    /* The face toward the viewer: forehand (black) for forehand/pivot strokes, backhand (red) for backhand strokes. */
+    .court { --rubber: #17181c; --rubber-edge: #3a3d45; }
+    .court[data-stroke="backhand"] { --rubber: #d22f2b; --rubber-edge: #ef5f52; }
+    /* After impact the racket turns over, so the follow-through shows the other face. */
+    .court[data-flipped="true"] { --rubber: #d22f2b; --rubber-edge: #ef5f52; }
+    .court[data-stroke="backhand"][data-flipped="true"] { --rubber: #17181c; --rubber-edge: #3a3d45; }
+    .paddle::after { position: absolute; top: -18px; left: 12px; width: 7px; height: 24px; border-radius: 2px; background: #c89b6c; content: ""; }
+    .leg { position: absolute; top: 127px; left: 51px; width: 19px; height: 51px; border-radius: 10px; background: #1b2335; transform: rotate(13deg); transform-origin: top; }
+    .leg.right { left: 93px; transform: rotate(-13deg); }
+    .foot { position: absolute; top: 168px; left: 37px; width: 42px; height: 12px; border-radius: 10px 3px 5px 5px; background: #ecf0e8; transform: rotate(-4deg); }
+    .foot.right { left: 91px; transform: rotate(5deg); }
+    /* Pivot (回り込み): wide, side-on stance at the backhand corner. */
+    .court[data-stroke="pivot"] .leg { transform: rotate(24deg); }
+    .court[data-stroke="pivot"] .leg.right { transform: rotate(-24deg); }
+    .court[data-stroke="pivot"] .foot { left: 26px; }
+    .court[data-stroke="pivot"] .foot.right { left: 103px; }
+    .table { position: absolute; right: 0; bottom: -13px; left: 0; height: 116px; transform: perspective(200px) rotateX(23deg); transform-origin: bottom; border: 2px solid #f2f6ff; background: #1d5fb4; box-shadow: inset 0 0 0 2px #1d5fb4, inset 0 0 0 4px #f2f6ff; }
+    .table::before { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #eaf1ff; content: ""; }
+    .table::after { position: absolute; top: 0; right: 0; left: 0; height: 3px; background: #f2f6ff; content: ""; }
+    .net { position: absolute; z-index: 1; right: 3%; bottom: 76px; left: 3%; height: 11px; border-top: 2px solid #e8eef8; background: repeating-linear-gradient(90deg, #e8eef822 0 4px, #0b1a3333 4px 8px); }
+    .ball { position: absolute; z-index: 4; top: var(--ball-y, 54%); left: var(--ball-x, 50%); width: 12px; height: 12px; border-radius: 50%; background: #f4f4e8; box-shadow: 0 0 13px #f4f4e899; opacity: 0; transform: translate(-50%, -50%); }
+    .court.is-aligning .torso, .court.is-playing .torso, .court.is-hit .torso { transform: rotate(var(--lean, 8deg)); }
+    .court[data-course-side="left"] .torso { transform: rotate(calc(-7deg * var(--hand-mirror))); }
+    .court[data-course-side="right"] .torso { transform: rotate(calc(7deg * var(--hand-mirror))); }
+    .court[data-target="0"] { --flight: 10%; }
+    .court[data-target="1"] { --flight: 30%; }
+    .court[data-target="2"] { --flight: 50%; }
+    .court[data-target="3"] { --flight: 70%; }
+    .court[data-target="4"] { --flight: 90%; }
+    .court.is-playing .ball { opacity: 1; transition: none; }
+    /* Real rallies reach the receiver in about 0.2s; the ball then vanishes so its landing spot doesn't give the answer away. */
+    .court { --flight-ms: 200ms; }
+    .court.is-hit .ball { top: 78%; left: var(--flight); opacity: 0; transition: left var(--flight-ms) linear, top var(--flight-ms) linear, opacity 60ms linear var(--flight-ms); }
+    .court.is-correct .ball, .court.is-wrong .ball { top: 78%; left: var(--flight); opacity: 1; transition: left .14s ease-out, top .14s ease-out; }
+    .countdown { position: absolute; z-index: 6; inset: 0; display: grid; place-items: center; background: #0b1a3380; color: #fff; font-family: "Barlow Condensed", sans-serif; font-size: 104px; font-weight: 800; line-height: 1; text-shadow: 0 4px 18px #0008; }
+    .countdown span { animation: count-pop 1s ease-out both; }
+    @keyframes count-pop { 0% { opacity: 0; transform: scale(1.6); } 25% { opacity: 1; transform: scale(1); } 85% { opacity: 1; } 100% { opacity: 0; transform: scale(.85); } }
+    .time-bar { position: absolute; z-index: 5; top: 0; left: 0; width: 100%; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left; }
+    .court.is-correct { outline: 3px solid var(--accent); outline-offset: -3px; }
+    .court.is-wrong { outline: 3px solid var(--coral); outline-offset: -3px; }
+
+    .question-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px 1px 12px; }
+    .question { margin: 0; font-size: 15px; font-weight: 800; }
+    .reaction { min-width: 60px; color: var(--muted); font-family: "Barlow Condensed", sans-serif; font-size: 13px; text-align: right; }
+    .answer-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; }
+    .answer { min-height: 57px; border: 1px solid var(--blue); border-radius: 3px; background: var(--white); color: var(--blue); font-size: 16px; font-weight: 800; cursor: pointer; transition: background .16s, color .16s, transform .16s; touch-action: manipulation; }
+    .lane-answer { min-height: 54px; padding: 4px 1px; font-size: 11px; white-space: nowrap; }
+    .answer-row[data-courses="2"] .lane-answer, .answer-row[data-courses="3"] .lane-answer { font-size: 15px; }
+    .answer:hover:not(:disabled) { background: #e2ebf8; }
+    .answer:active:not(:disabled) { transform: scale(.98); }
+    .answer:disabled { border-color: #d2dae6; background: #ebeff5; color: #a1abba; cursor: default; }
+    .lane-answer.is-selected { border-color: var(--coral); background: #f9e4dc; color: var(--ink); }
+    .lane-answer.is-target { border-color: var(--blue); background: var(--blue); color: white; }
+    .answer.primary { background: var(--blue); color: white; }
+    .answer.primary:hover:not(:disabled) { background: #163c7a; }
+    .answer .arrow { padding: 0 5px; color: var(--coral); font-size: 19px; }
+    .answer.primary .arrow { color: var(--accent); }
+    .feedback { min-height: 77px; margin-top: 12px; padding: 12px 14px; border-left: 3px solid var(--line); background: #fffefaaf; }
+    .feedback[data-state="good"] { border-color: var(--blue); }
+    .feedback[data-state="bad"] { border-color: var(--coral); }
+    .feedback-title { display: flex; justify-content: space-between; gap: 12px; margin: 0 0 4px; font-size: 12px; font-weight: 800; }
+    .feedback-copy { margin: 0; color: #52607a; font-size: 10px; line-height: 1.7; }
+    .footer-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 17px; }
+    .progress { display: flex; flex: 1; gap: 4px; }
+    .progress i { height: 4px; flex: 1; border-radius: 5px; background: #d5dde9; }
+    .progress i.done { background: var(--blue); }
+    .progress i.current { background: var(--coral); }
+    .score { color: var(--muted); font-size: 10px; font-weight: 700; white-space: nowrap; }
+    .score strong { color: var(--ink); font-family: "Barlow Condensed", sans-serif; font-size: 17px; }
+    .bottom-note { display: flex; justify-content: space-between; margin-top: 19px; padding-top: 11px; border-top: 1px solid var(--line); color: var(--muted); font-size: 9px; }
+    .bottom-note strong { color: var(--blue); font-weight: 700; }
+    .hidden { display: none !important; }
+    .summary { padding: 18px 2px 10px; animation: arrive .35s ease both; }
+    @keyframes arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .summary h2 { margin: 0 0 12px; font-size: 19px; }
+    .summary-main { display: flex; align-items: baseline; gap: 7px; margin-bottom: 13px; }
+    .summary-main strong { font-family: "Barlow Condensed", sans-serif; font-size: 48px; line-height: 1; }
+    .summary-main span { color: var(--muted); font-size: 11px; }
+    .summary-stats { display: flex; gap: 20px; padding: 11px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .summary-stats div { display: grid; gap: 2px; }
+    .summary-stats span { color: var(--muted); font-size: 9px; }
+    .summary-stats strong { font-family: "Barlow Condensed", sans-serif; font-size: 20px; }
+    .summary .answer { width: 100%; margin-top: 14px; }
+    button:focus-visible { outline: 3px solid var(--coral); outline-offset: 2px; }
+
+    @media (min-width: 600px) {
+      .shell { padding-top: 30px; }
+      .intro { padding-top: 24px; }
+      h1 { font-size: 25px; }
+      .court { height: 340px; }
+      .question { font-size: 16px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">R</div>
+        <div><div class="brand-name">READ</div><div class="brand-sub">TABLE TENNIS · ANTICIPATION</div></div>
+      </div>
+      <div class="session-tag">DAILY TRAINING / 01</div>
+    </header>
+
+    <section class="intro" aria-label="セッション情報">
+      <div><p class="eyebrow">PERCEPTION DRILL</p><h1>相手の動きから、<br>コースを読む。</h1></div>
+      <div class="round-count"><strong id="round-label">READY</strong><span id="round-sub">10 BALLS</span></div>
+    </section>
+
+    <div class="hand-row">
+      <span class="hand-label">相手プレーヤーの利き腕</span>
+      <div class="hand-switch" role="group" aria-label="相手プレーヤーの利き腕">
+        <button class="hand-option" type="button" data-hand="right" aria-pressed="true">右利き</button>
+        <button class="hand-option" type="button" data-hand="left" aria-pressed="false">左利き</button>
+      </div>
+    </div>
+    <div class="hand-row">
+      <span class="hand-label">回答の制限時間</span>
+      <div class="hand-switch level-switch" role="group" aria-label="回答の制限時間">
+        <button class="hand-option level-option" type="button" data-limit="1000" aria-pressed="true">初級 1.0秒</button>
+        <button class="hand-option level-option" type="button" data-limit="800" aria-pressed="false">中級 0.8秒</button>
+        <button class="hand-option level-option" type="button" data-limit="500" aria-pressed="false">上級 0.5秒</button>
+      </div>
+    </div>
+    <div class="hand-row">
+      <span class="hand-label">予測コース数</span>
+      <div class="hand-switch level-switch" role="group" aria-label="予測コース数">
+        <button class="hand-option" type="button" data-courses="2" aria-pressed="false">2コース</button>
+        <button class="hand-option" type="button" data-courses="3" aria-pressed="true">3コース</button>
+        <button class="hand-option" type="button" data-courses="5" aria-pressed="false">5コース</button>
+      </div>
+    </div>
+
+    <section class="court" id="court" aria-label="卓球の相手と台を模した出題シーン">
+      <div class="court-lines"></div>
+      <div class="scene-top"><span class="live-dot"></span><span id="scene-status">SCENE 01 / READY</span></div>
+      <div class="cue-chip" id="cue-chip">フォームを観察</div>
+      <div class="opponent" aria-hidden="true">
+        <div class="hair"></div><div class="head"></div><div class="neck"></div>
+        <div class="torso"></div><div class="shirt-stripe"></div>
+        <div class="swing-arm">
+          <div class="upper-arm"></div><div class="elbow"></div><div class="lower-arm"></div><div class="wrist"></div><div class="paddle"></div>
+        </div>
+        <div class="leg"></div><div class="leg right"></div><div class="foot"></div><div class="foot right"></div>
+      </div>
+      <div class="net" aria-hidden="true"></div><div class="table" aria-hidden="true"></div><div class="ball" aria-hidden="true"></div>
+      <div class="time-bar" id="time-bar" aria-hidden="true"></div>
+      <div class="countdown hidden" id="countdown" role="status" aria-live="assertive"></div>
+    </section>
+
+    <div id="training-ui">
+      <div class="question-row"><p class="question" id="question">返球コースを予測しよう</p><span class="reaction" id="reaction">— ms</span></div>
+      <div class="answer-row" id="answer-row" role="group" aria-label="返球コース"></div>
+      <section class="feedback" id="feedback" data-state="idle" aria-live="polite">
+        <p class="feedback-title"><span id="feedback-title">準備ができたらスタート</span><span id="feedback-tag"></span></p>
+        <p class="feedback-copy" id="feedback-copy">相手がスイングすると同時に球が飛びます。制限時間内に、返球コースを答えよう。</p>
+      </section>
+      <div class="footer-row">
+        <div class="progress" id="progress" aria-label="セッションの進行状況"></div>
+        <div class="score">連続 <strong id="streak">0</strong>　正解 <strong id="accuracy">—</strong></div>
+      </div>
+      <div class="bottom-note"><span>BEST STREAK <strong id="best-streak">0</strong></span><span>10 BALL SESSION</span></div>
+    </div>
+
+    <section class="summary hidden" id="summary" aria-live="polite">
+      <h2>セッション完了</h2>
+      <div class="summary-main"><strong id="final-accuracy">0%</strong><span>正答率</span></div>
+      <div class="summary-stats">
+        <div><span>正解</span><strong id="final-correct">0 / 10</strong></div>
+        <div><span>最長連続</span><strong id="final-streak">0</strong></div>
+        <div><span>平均反応</span><strong id="final-reaction">— ms</strong></div>
+        <div><span>時間切れ</span><strong id="final-timeouts">0</strong></div>
+      </div>
+      <button class="answer primary" id="again-button" type="button">もう一度プレー <span class="arrow">↻</span></button>
+    </section>
+  </main>
+
+  <script>
+    const scenarios = [
+      { cue: "インパクトの面" }, { cue: "手首の角度" }, { cue: "前腕と面の向き" },
+      { cue: "ラケット面" }, { cue: "打球直前の角度" }, { cue: "面の開き" },
+      { cue: "フォロースルー" }, { cue: "ラケットの向き" }, { cue: "手首の返し" },
+      { cue: "インパクトの角度" }
+    ];
+    const $ = (id) => document.getElementById(id);
+    const court = $("court");
+    const laneNames = ["左側", "左中", "中", "右中", "右側"];
+    // Answer zones per course count; each zone lists the landing lanes (0-4) it covers.
+    const courseZones = {
+      2: [{ label: "左", lanes: [0, 1] }, { label: "右", lanes: [3, 4] }],
+      3: [{ label: "左", lanes: [0, 1] }, { label: "中", lanes: [2] }, { label: "右", lanes: [3, 4] }],
+      5: laneNames.map((label, lane) => ({ label, lanes: [lane] }))
+    };
+    let courseCount = Number(localStorage.getItem("read-course-count"));
+    if (!courseZones[courseCount]) courseCount = 3;
+    let laneButtons = [];
+    const zoneOf = (lane) => courseZones[courseCount].findIndex((zone) => zone.lanes.includes(lane));
+    const zoneName = (lane) => courseZones[courseCount][zoneOf(lane)].label;
+    const racketCenters = [0, 42, 50, 58, 100];
+    let order = [];
+    let round = -1;
+    let streak = 0;
+    let bestSessionStreak = 0;
+    let correct = 0;
+    let reactionTotal = 0;
+    let reactionCount = 0;
+    let timeouts = 0;
+    let answered = 0;
+    let startedAt = 0;
+    let locked = false;
+    let deadlineTimer = 0;
+    let swingFrame = 0;
+    let handedness = localStorage.getItem("read-handedness") || "right";
+    const timeLimits = [1000, 800, 500];
+    let timeLimit = Number(localStorage.getItem("read-time-limit"));
+    if (!timeLimits.includes(timeLimit)) timeLimit = timeLimits[0];
+    const handButtons = [...document.querySelectorAll("[data-hand]")];
+    const levelButtons = [...document.querySelectorAll("[data-limit]")];
+    const courseButtons = [...document.querySelectorAll("[data-courses]")];
+    const timeBar = $("time-bar");
+    const RESULT_MS = 700;
+    let bestStreak = Number(localStorage.getItem("read-best-streak") || 0);
+    $("best-streak").textContent = bestStreak;
+
+    function syncHandednessControls() {
+      const sessionInProgress = round >= 0 && round < order.length;
+      court.dataset.handedness = handedness;
+      handButtons.forEach((button) => {
+        const selected = button.dataset.hand === handedness;
+        button.setAttribute("aria-pressed", String(selected));
+        button.disabled = sessionInProgress;
+      });
+      levelButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(Number(button.dataset.limit) === timeLimit));
+        button.disabled = sessionInProgress;
+      });
+      courseButtons.forEach((button) => {
+        button.setAttribute("aria-pressed", String(Number(button.dataset.courses) === courseCount));
+        button.disabled = sessionInProgress;
+      });
+    }
+
+    function renderAnswerButtons() {
+      const row = $("answer-row");
+      const zones = courseZones[courseCount];
+      row.dataset.courses = courseCount;
+      row.style.gridTemplateColumns = `repeat(${zones.length}, minmax(0, 1fr))`;
+      row.setAttribute("aria-label", `${zones.length}分割の返球コース`);
+      laneButtons = zones.map((zone, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "answer lane-answer";
+        button.dataset.zone = index;
+        button.textContent = zone.label;
+        button.disabled = !(round >= 0 && round < order.length && !locked);
+        button.addEventListener("click", () => choose(index));
+        return button;
+      });
+      row.replaceChildren(...laneButtons);
+    }
+
+    function selectCourseCount(value) {
+      if (round >= 0 && round < order.length || !courseZones[value]) return;
+      courseCount = value;
+      localStorage.setItem("read-course-count", String(courseCount));
+      renderAnswerButtons();
+      syncHandednessControls();
+    }
+
+    function selectHandedness(value) {
+      if (round >= 0 && round < order.length) return;
+      handedness = value;
+      localStorage.setItem("read-handedness", handedness);
+      syncHandednessControls();
+    }
+
+    function selectTimeLimit(value) {
+      if (round >= 0 && round < order.length || !timeLimits.includes(value)) return;
+      timeLimit = value;
+      localStorage.setItem("read-time-limit", String(timeLimit));
+      syncHandednessControls();
+    }
+
+    const formatLimit = (ms) => `${(ms / 1000).toFixed(1)}秒`;
+
+    // Arm model in .swing-arm local coordinates (CSS rotate: positive = clockwise, y axis down).
+    const arm = {
+      upper: document.querySelector(".upper-arm"),
+      elbow: document.querySelector(".elbow"),
+      lower: document.querySelector(".lower-arm"),
+      wrist: document.querySelector(".wrist"),
+      paddle: document.querySelector(".paddle")
+    };
+    const SHOULDER = { x: 9, y: 8 };
+    const UPPER_LENGTH = 42;
+    const GRIP_OFFSET = { x: -1.5, y: 39 };
+    const PADDLE_CENTER_OFFSET = { x: 0, y: 39 };
+    const SWING_MS = 260;
+    const IMPACT_PROGRESS = 0.35;
+    const FLIP_END = 0.8;
+    const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y });
+    const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y });
+    const lerpPoint = (a, b, t) => ({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+    const rotate = (v, deg) => {
+      const r = deg * Math.PI / 180;
+      return { x: v.x * Math.cos(r) - v.y * Math.sin(r), y: v.x * Math.sin(r) + v.y * Math.cos(r) };
+    };
+    const segmentAngle = (v) => Math.atan2(-v.x, v.y) * 180 / Math.PI;
+    const easeInOut = (t) => t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+
+    function jointPose({ upper, lower, paddle }) {
+      const elbow = add(SHOULDER, rotate({ x: 0, y: UPPER_LENGTH }, upper));
+      const grip = add(elbow, rotate(GRIP_OFFSET, upper + lower));
+      return { elbow, grip, racketAngle: upper + lower + paddle };
+    }
+
+    function paddleCenter(pose) {
+      return add(pose.grip, rotate(PADDLE_CENTER_OFFSET, pose.racketAngle));
+    }
+
+    // Ready stance: elbow bent 90deg, racket beside the body on the hitting-hand side.
+    function readyPose(swing = "center", shotType = "") {
+      const upper = swing === "left" ? -2 : swing === "right" ? -14 : -8;
+      const paddle = shotType === "straight" ? -20 : shotType === "cross" ? 20 : -5;
+      return jointPose({ upper, lower: -90, paddle });
+    }
+
+    // Follow-through: racket finishes beside the opposite side of the face, elbow at 90deg.
+    const followPose = jointPose({ upper: 58, lower: 90, paddle: -22 });
+
+    // Backhand: racket starts in front of the body on the non-hitting side and is pushed forward toward the line.
+    const backhandReadyPose = jointPose({ upper: 15, lower: 75, paddle: 20 });
+    const backhandFollowPose = jointPose({ upper: 10, lower: -145, paddle: -5 });
+
+    // The racket centre moves on a straight line; the arm reaches forward (foreshortened) to follow it.
+    function swingPose(start, end, t) {
+      const turn = ((end.racketAngle - start.racketAngle + 540) % 360) - 180;
+      const racketAngle = start.racketAngle + turn * t;
+      const center = lerpPoint(paddleCenter(start), paddleCenter(end), t);
+      return {
+        elbow: lerpPoint(start.elbow, end.elbow, t),
+        grip: sub(center, rotate(PADDLE_CENTER_OFFSET, racketAngle)),
+        racketAngle
+      };
+    }
+
+    function renderArm({ elbow, grip, racketAngle, faceScale = 1 }) {
+      const upperVector = sub(elbow, SHOULDER);
+      const foreVector = sub(grip, elbow);
+      const foreAngle = segmentAngle(foreVector);
+      const wrist = add(grip, rotate({ x: 1.5, y: 2 }, foreAngle));
+      arm.upper.style.height = `${Math.hypot(upperVector.x, upperVector.y) + 5}px`;
+      arm.upper.style.transform = `translate(${SHOULDER.x - 9}px, ${SHOULDER.y - 8}px) rotate(${segmentAngle(upperVector)}deg)`;
+      arm.elbow.style.transform = `translate(${elbow.x - 9}px, ${elbow.y - 9}px)`;
+      arm.lower.style.height = `${Math.hypot(foreVector.x, foreVector.y) + 9}px`;
+      arm.lower.style.transform = `translate(${elbow.x - 7}px, ${elbow.y - 6}px) rotate(${foreAngle}deg)`;
+      arm.wrist.style.transform = `translate(${wrist.x - 8}px, ${wrist.y - 8}px)`;
+      arm.paddle.style.transform = `translate(${grip.x - 16.5}px, ${grip.y + 18}px)       rotate(${racketAngle}deg) scaleX(${faceScale})`;
+    }
+
+    syncHandednessControls();
+    renderAnswerButtons();
+    renderArm(readyPose());
+
+    function shiftPlayer(px) {
+      const courtBounds = court.getBoundingClientRect();
+      const currentOffset = Number.parseFloat(getComputedStyle(court).getPropertyValue("--player-offset")) || 0;
+      court.style.setProperty("--player-offset", `${currentOffset + px / courtBounds.width * 100}%`);
+    }
+
+    function alignPlayerWithRacket(racketX) {
+      const courtBounds = court.getBoundingClientRect();
+      const paddleBounds = document.querySelector(".paddle").getBoundingClientRect();
+      const targetX = courtBounds.left + courtBounds.width * racketX / 100;
+      shiftPlayer(targetX - (paddleBounds.left + paddleBounds.width / 2));
+      // Keep the torso fully on screen (narrow screens with the player at the far corner).
+      const torso = document.querySelector(".torso").getBoundingClientRect();
+      const margin = 4;
+      if (torso.right > courtBounds.right - margin) shiftPlayer(courtBounds.right - margin - torso.right);
+      else if (torso.left < courtBounds.left + margin) shiftPlayer(courtBounds.left + margin - torso.left);
+    }
+
+    function syncBallToRacket() {
+      const courtBounds = court.getBoundingClientRect();
+      const paddleBounds = document.querySelector(".paddle").getBoundingClientRect();
+      const paddleX = paddleBounds.left + paddleBounds.width / 2;
+      const paddleY = paddleBounds.top + paddleBounds.height / 2;
+      court.style.setProperty("--ball-x", `${(paddleX - courtBounds.left) / courtBounds.width * 100}%`);
+      court.style.setProperty("--ball-y", `${(paddleY - courtBounds.top) / courtBounds.height * 100}%`);
+    }
+
+    function shuffle(values) {
+      for (let index = values.length - 1; index > 0; index--) {
+        const swapIndex = Math.floor(Math.random() * (index + 1));
+        [values[index], values[swapIndex]] = [values[swapIndex], values[index]];
+      }
+      return values;
+    }
+
+    function shuffleScenarios() {
+      const routePlans = [
+        // With 2 courses there is no centre answer, so the centre straight is replaced by a side straight.
+        { stroke: "forehand", shotType: "straight", playerLane: 1 },
+        { stroke: "forehand", shotType: "straight", playerLane: courseCount === 2 ? (Math.random() < 0.5 ? 1 : 3) : 2 },
+        { stroke: "forehand", shotType: "straight", playerLane: 3 }, { stroke: "forehand", shotType: "cross", playerLane: 1 },
+        { stroke: "forehand", shotType: "cross", playerLane: 3 }, { stroke: "forehand", shotType: "cross", playerLane: 2 },
+        { stroke: "backhand", shotType: "straight" }, { stroke: "backhand", shotType: "straight" },
+        { stroke: "pivot", shotType: "straight" }, { stroke: "pivot", shotType: "straight" }
+      ];
+      const positionOf = (plan) => plan.playerLane ?? plan.stroke;
+      let plans;
+      do {
+        plans = shuffle([...routePlans]);
+      } while (plans.some((plan, index) => index > 0 && positionOf(plan) === positionOf(plans[index - 1])));
+      // The backhand side is the player's non-hitting side: the viewer's right for a right-hander.
+      const backSideLane = handedness === "right" ? 4 : 0;
+      const backSideRacketX = { backhand: handedness === "right" ? 74 : 26, pivot: handedness === "right" ? 66 : 34 };
+      const shuffledScenarios = shuffle([...scenarios]);
+      order = plans.map((plan, index) => {
+        if (plan.stroke !== "forehand") {
+          return { ...shuffledScenarios[index], ...plan, playerLane: backSideLane, racketX: backSideRacketX[plan.stroke], targetLane: backSideLane };
+        }
+        const targetLane = plan.shotType === "straight"
+          ? plan.playerLane
+          : plan.playerLane === 1 ? 4 : plan.playerLane === 3 ? 0 : (Math.random() < 0.5 ? 0 : 4);
+        return { ...shuffledScenarios[index], ...plan, racketX: racketCenters[plan.playerLane], targetLane };
+      });
+    }
+
+    function updateProgress() {
+      const progress = $("progress");
+      progress.replaceChildren(...order.map((_, index) => {
+        const segment = document.createElement("i");
+        if (index < round) segment.className = "done";
+        if (index === round) segment.className = "current";
+        return segment;
+      }));
+      $("round-label").textContent = round < 0 ? "READY" : `${String(round + 1).padStart(2, "0")} / 10`;
+      $("round-sub").textContent = round < 0 ? "10 BALLS" : "BALLS";
+      $("scene-status").textContent = `SCENE ${String(Math.max(1, round + 1)).padStart(2, "0")} / ${round < 0 ? "READY" : "LIVE"}`;
+      $("streak").textContent = streak;
+      $("accuracy").textContent = answered ? `${Math.round(correct / answered * 100)}%` : "—";
+    }
+
+    let countingDown = false;
+
+    function startSession() {
+      if (countingDown) return;
+      shuffleScenarios();
+      round = 0;
+      streak = 0;
+      bestSessionStreak = 0;
+      correct = 0;
+      reactionTotal = 0;
+      reactionCount = 0;
+      timeouts = 0;
+      answered = 0;
+      syncHandednessControls();
+      $("training-ui").classList.remove("hidden");
+      $("summary").classList.add("hidden");
+      updateProgress();
+      runCountdown(3, showScenario);
+    }
+
+    function runCountdown(seconds, done) {
+      countingDown = true;
+      const overlay = $("countdown");
+      $("question").textContent = "まもなく開始";
+      $("cue-chip").textContent = "COUNTDOWN";
+      $("reaction").textContent = "— ms";
+      $("feedback").dataset.state = "idle";
+      $("feedback-title").textContent = "準備して";
+      $("feedback-tag").textContent = "READY";
+      $("feedback-copy").textContent = `${seconds}秒後に1球目のスイングが始まります。相手のフォームに集中しよう。`;
+      laneButtons.forEach((button) => {
+        button.disabled = true;
+        button.classList.remove("is-selected", "is-target");
+      });
+      overlay.classList.remove("hidden");
+      let remaining = seconds;
+      const tick = () => {
+        if (remaining === 0) {
+          overlay.classList.add("hidden");
+          overlay.replaceChildren();
+          countingDown = false;
+          done();
+          return;
+        }
+        const digit = document.createElement("span");
+        digit.textContent = remaining;
+        overlay.replaceChildren(digit);
+        remaining--;
+        window.setTimeout(tick, 1000);
+      };
+      tick();
+    }
+
+    function showScenario() {
+      const scenario = order[round];
+      locked = true;
+      court.className = "court is-aligning";
+      court.dataset.target = scenario.targetLane;
+      court.dataset.courseSide = scenario.targetLane < 2 ? "left" : scenario.targetLane > 2 ? "right" : "center";
+      court.dataset.handedness = handedness;
+      const movesRight = scenario.targetLane > scenario.playerLane;
+      const swing = scenario.targetLane === scenario.playerLane
+        ? "center"
+        : (movesRight !== (handedness === "right") ? "right" : "left");
+      const isBackhand = scenario.stroke === "backhand";
+      const start = isBackhand ? backhandReadyPose : readyPose(swing, scenario.shotType);
+      const end = isBackhand ? backhandFollowPose : followPose;
+      court.dataset.stroke = scenario.stroke;
+      court.dataset.flipped = "false";
+      renderArm(start);
+      alignPlayerWithRacket(scenario.racketX);
+      renderArm(swingPose(start, end, IMPACT_PROGRESS));
+      syncBallToRacket();
+      renderArm(start);
+      court.className = "court is-playing";
+      $("cue-chip").textContent = scenario.cue;
+      $("question").textContent = `${formatLimit(timeLimit)}以内にコースを${courseCount}択で`;
+      $("feedback").dataset.state = "idle";
+      $("feedback-title").textContent = "どちらに来る？";
+      $("feedback-tag").textContent = "NOW";
+      $("feedback-copy").textContent = "スイングの向きとラケット面から、球が台に届く前に答えよう。";
+      $("reaction").textContent = "— ms";
+      laneButtons.forEach((button) => {
+        button.disabled = false;
+        button.classList.remove("is-selected", "is-target");
+      });
+      updateProgress();
+      startedAt = performance.now();
+      locked = false;
+      startTimeBar();
+      deadlineTimer = window.setTimeout(() => choose(null), timeLimit);
+      playSwing(start, end);
+    }
+
+    function playSwing(start, end) {
+      cancelAnimationFrame(swingFrame);
+      let hit = false;
+      const step = (now) => {
+        const elapsed = now - startedAt;
+        const progress = easeInOut(Math.min(1, Math.max(0, elapsed / SWING_MS)));
+        // Turn the racket over between impact and FLIP_END; scaleX narrows it edge-on mid-turn.
+        const turn = Math.min(1, Math.max(0, (progress - IMPACT_PROGRESS) / (FLIP_END - IMPACT_PROGRESS)));
+        court.dataset.flipped = String(turn >= 0.5);
+        renderArm({ ...swingPose(start, end, progress), faceScale: Math.max(0.12, Math.abs(Math.cos(Math.PI * turn))) });
+        if (!hit && progress >= IMPACT_PROGRESS) {
+          hit = true;
+          if (court.classList.contains("is-playing")) court.className = "court is-hit";
+        }
+        if (progress < 1) swingFrame = requestAnimationFrame(step);
+      };
+      swingFrame = requestAnimationFrame(step);
+    }
+
+    function startTimeBar() {
+      timeBar.style.transition = "none";
+      timeBar.style.transform = "scaleX(1)";
+      timeBar.getBoundingClientRect();
+      timeBar.style.transition = `transform ${timeLimit}ms linear`;
+      timeBar.style.transform = "scaleX(0)";
+    }
+
+    function stopTimeBar() {
+      const current = getComputedStyle(timeBar).transform;
+      timeBar.style.transition = "none";
+      timeBar.style.transform = current;
+    }
+
+    // zone === null means the time limit expired without an answer.
+    function choose(zone) {
+      if (locked || round < 0 || round >= order.length) return;
+      locked = true;
+      window.clearTimeout(deadlineTimer);
+      stopTimeBar();
+      const scenario = order[round];
+      const targetZone = zoneOf(scenario.targetLane);
+      const elapsed = Math.round(performance.now() - startedAt);
+      const timedOut = zone === null || elapsed > timeLimit;
+      const isCorrect = !timedOut && zone === targetZone;
+      answered++;
+      if (timedOut) {
+        timeouts++;
+      } else {
+        reactionTotal += elapsed;
+        reactionCount++;
+      }
+      if (isCorrect) {
+        correct++;
+        streak++;
+        bestSessionStreak = Math.max(bestSessionStreak, streak);
+        bestStreak = Math.max(bestStreak, streak);
+        localStorage.setItem("read-best-streak", String(bestStreak));
+        $("best-streak").textContent = bestStreak;
+      } else {
+        streak = 0;
+      }
+      court.className = isCorrect ? "court is-correct" : "court is-wrong";
+      court.dataset.target = scenario.targetLane;
+      laneButtons.forEach((button) => {
+        button.disabled = true;
+        if (Number(button.dataset.zone) === zone) button.classList.add("is-selected");
+        if (Number(button.dataset.zone) === targetZone) button.classList.add("is-target");
+      });
+      $("reaction").textContent = timedOut ? "TIME UP" : `${elapsed} ms`;
+      $("feedback").dataset.state = isCorrect ? "good" : "bad";
+      const routeName = scenario.stroke === "backhand" ? "バックハンド・ストレート"
+        : scenario.stroke === "pivot" ? "回り込みフォア・ストレート"
+        : scenario.shotType === "straight" ? "ストレート" : "クロス";
+      $("feedback-title").textContent = isCorrect
+        ? "正解。よく読めた。"
+        : `${timedOut ? `時間切れ（${formatLimit(timeLimit)}）。` : ""}正解は「${zoneName(scenario.targetLane)}」`;
+      $("feedback-tag").textContent = routeName;
+      $("feedback-copy").textContent = scenario.stroke === "backhand"
+        ? "バック側でバックハンド。ラケットをサイドライン方向へ押し出しています。"
+        : scenario.stroke === "pivot"
+          ? "バック側に回り込んでフォアハンド。立ち位置とラケット角度からストレートと読めます。"
+          : `立ち位置は${laneNames[scenario.playerLane]}。ラケット角度から${routeName}と読めます。`;
+      $("question").textContent = `${routeName} → ${zoneName(scenario.targetLane)}`;
+      updateProgress();
+      window.setTimeout(() => {
+        round++;
+        if (round < order.length) showScenario();
+        else showSummary();
+      }, RESULT_MS);
+    }
+
+    function showSummary() {
+      cancelAnimationFrame(swingFrame);
+      court.className = "court";
+      court.removeAttribute("data-target");
+      court.removeAttribute("data-course-side");
+      court.removeAttribute("data-stroke");
+      court.removeAttribute("data-flipped");
+      court.style.removeProperty("--player-offset");
+      court.style.removeProperty("--ball-x");
+      court.style.removeProperty("--ball-y");
+      renderArm(readyPose());
+      timeBar.style.transition = "none";
+      timeBar.style.transform = "scaleX(0)";
+      syncHandednessControls();
+      $("training-ui").classList.add("hidden");
+      $("summary").classList.remove("hidden");
+      $("final-accuracy").textContent = `${Math.round(correct / order.length * 100)}%`;
+      $("final-correct").textContent = `${correct} / ${order.length}`;
+      $("final-streak").textContent = bestSessionStreak;
+      $("final-reaction").textContent = reactionCount ? `${Math.round(reactionTotal / reactionCount)} ms` : "— ms";
+      $("final-timeouts").textContent = timeouts;
+      $("round-label").textContent = "DONE";
+      $("round-sub").textContent = "SESSION";
+      $("scene-status").textContent = "SESSION / COMPLETE";
+      $("cue-chip").textContent = "よく見た";
+    }
+
+    handButtons.forEach((button) => button.addEventListener("click", () => selectHandedness(button.dataset.hand)));
+    levelButtons.forEach((button) => button.addEventListener("click", () => selectTimeLimit(Number(button.dataset.limit))));
+    courseButtons.forEach((button) => button.addEventListener("click", () => selectCourseCount(Number(button.dataset.courses))));
+    $("again-button").addEventListener("click", startSession);
+    $("feedback-title").addEventListener("click", () => {
+      if (round === -1) startSession();
+    });
+    const startButton = document.createElement("button");
+    startButton.type = "button";
+    startButton.className = "answer primary";
+    startButton.textContent = "練習を始める　→";
+    startButton.id = "start-button";
+    startButton.style.width = "100%";
+    startButton.style.marginTop = "10px";
+    $("answer-row").after(startButton);
+    startButton.addEventListener("click", () => {
+      startButton.remove();
+      startSession();
+    });
+  </script>
+</body>
+</html>
